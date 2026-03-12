@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>汉语 — Learn Chinese</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #0f0f1a;
+  --card: #1a1a2e;
+  --card-hover: #22223a;
+  --accent: #4fc3f7;
+  --accent2: #ff6b9d;
+  --green: #66bb6a;
+  --orange: #ffa726;
+  --red: #ef5350;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --radius: 16px;
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ── NAV ── */
+.nav {
+  display: flex;
+  justify-content: space-around;
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: #12121f;
+  border-top: 1px solid #222;
+  padding: 8px 0 calc(8px + var(--safe-bottom));
+  z-index: 100;
+}
+.nav button {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 11px; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; cursor: pointer; padding: 4px 16px;
+}
+.nav button.active { color: var(--accent); }
+.nav button svg { width: 24px; height: 24px; }
+
+/* ── SCREENS ── */
+.screen { display: none; padding: 16px 16px 90px; min-height: 100dvh; }
+.screen.active { display: block; }
+
+/* ── HOME ── */
+.home-header { text-align: center; margin: 20px 0 30px; }
+.home-header h1 { font-size: 32px; margin-bottom: 4px; }
+.home-header p { color: var(--text-dim); font-size: 14px; }
+
+.stats-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--card); border-radius: var(--radius); padding: 16px; text-align: center;
+}
+.stat-card .num { font-size: 28px; font-weight: 700; }
+.stat-card .label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.stat-card.accent .num { color: var(--accent); }
+.stat-card.green .num { color: var(--green); }
+.stat-card.orange .num { color: var(--orange); }
+
+.hsk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hsk-btn {
+  background: var(--card); border: 2px solid transparent; border-radius: var(--radius);
+  padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.hsk-btn:active { transform: scale(0.97); }
+.hsk-btn.selected { border-color: var(--accent); background: var(--card-hover); }
+.hsk-btn h3 { font-size: 18px; margin-bottom: 4px; }
+.hsk-btn p { font-size: 12px; color: var(--text-dim); }
+.hsk-btn .progress-bar { height: 4px; background: #333; border-radius: 2px; margin-top: 10px; }
+.hsk-btn .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+.start-btn {
+  display: block; width: 100%; margin-top: 24px; padding: 18px;
+  background: linear-gradient(135deg, var(--accent), #2196f3); color: #000;
+  border: none; border-radius: var(--radius); font-size: 18px; font-weight: 700;
+  cursor: pointer; transition: transform 0.2s;
+}
+.start-btn:active { transform: scale(0.97); }
+.start-btn:disabled { opacity: 0.4; }
+
+/* ── STUDY ── */
+.study-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.study-top .back-btn {
+  background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer;
+  padding: 8px;
+}
+.study-progress {
+  height: 4px; background: #222; border-radius: 2px; margin-bottom: 24px;
+}
+.study-progress-fill {
+  height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s;
+}
+.study-counter { color: var(--text-dim); font-size: 14px; }
+
+.flashcard {
+  background: var(--card);
+  border-radius: 20px;
+  min-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+  user-select: none;
+}
+.flashcard:active { transform: scale(0.98); }
+
+.flashcard .hanzi { font-size: min(28vw, 140px); line-height: 1.2; margin-bottom: 8px; }
+.flashcard .hint { color: var(--text-dim); font-size: 14px; }
+.flashcard .divider {
+  width: 60%; height: 1px; background: #333; margin: 20px 0;
+}
+.flashcard .pinyin {
+  font-size: 36px; color: var(--accent); margin-bottom: 12px;
+}
+.flashcard .english {
+  font-size: 20px; color: var(--text-dim); text-align: center; line-height: 1.4;
+  max-width: 90%;
+}
+
+.rating-buttons {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;
+  margin-top: 20px;
+}
+.rating-btn {
+  padding: 14px 4px; border: none; border-radius: 12px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: transform 0.15s; color: #fff;
+}
+.rating-btn:active { transform: scale(0.93); }
+.rating-btn.again { background: var(--red); }
+.rating-btn.hard { background: var(--orange); }
+.rating-btn.good { background: var(--green); }
+.rating-btn.easy { background: var(--accent); color: #000; }
+.rating-btn span { display: block; font-size: 10px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+
+.hidden { display: none !important; }
+
+/* ── REVIEW COMPLETE ── */
+.complete {
+  text-align: center; padding: 60px 20px;
+}
+.complete .emoji { font-size: 64px; margin-bottom: 16px; }
+.complete h2 { font-size: 24px; margin-bottom: 8px; }
+.complete p { color: var(--text-dim); margin-bottom: 24px; }
+
+/* ── BROWSE ── */
+.search-box {
+  width: 100%; padding: 14px 16px; background: var(--card);
+  border: 1px solid #333; border-radius: var(--radius); color: var(--text);
+  font-size: 16px; margin-bottom: 12px; outline: none;
+}
+.search-box:focus { border-color: var(--accent); }
+
+.filter-row {
+  display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;
+  padding-bottom: 4px; -webkit-overflow-scrolling: touch;
+}
+.filter-btn {
+  padding: 8px 16px; background: var(--card); border: 1px solid #333;
+  border-radius: 20px; color: var(--text-dim); font-size: 13px;
+  white-space: nowrap; cursor: pointer;
+}
+.filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+.word-list { display: flex; flex-direction: column; gap: 8px; }
+.word-item {
+  display: flex; align-items: center; gap: 16px; padding: 14px 16px;
+  background: var(--card); border-radius: var(--radius); cursor: pointer;
+}
+.word-item:active { background: var(--card-hover); }
+.word-item .hz { font-size: 28px; min-width: 60px; }
+.word-item .info { flex: 1; }
+.word-item .py { color: var(--accent); font-size: 14px; }
+.word-item .en { color: var(--text-dim); font-size: 13px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.word-item .badge {
+  font-size: 11px; padding: 3px 8px; border-radius: 10px;
+  background: #222; color: var(--text-dim);
+}
+
+/* ── PROFILE ── */
+.profile-section {
+  background: var(--card); border-radius: var(--radius); padding: 20px;
+  margin-bottom: 16px;
+}
+.profile-section h3 { font-size: 16px; margin-bottom: 12px; color: var(--accent); }
+
+.streak-display { text-align: center; margin: 20px 0; }
+.streak-display .fire { font-size: 48px; }
+.streak-display .days { font-size: 36px; font-weight: 700; }
+.streak-display .label { color: var(--text-dim); font-size: 14px; }
+
+.setting-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid #222;
+}
+.setting-row:last-child { border: none; }
+.setting-row label { font-size: 15px; }
+.setting-row select, .setting-row input[type=number] {
+  background: #222; color: var(--text); border: 1px solid #333;
+  border-radius: 8px; padding: 8px 12px; font-size: 14px;
+}
+.reset-btn {
+  width: 100%; padding: 14px; background: #331111; color: var(--red);
+  border: 1px solid var(--red); border-radius: var(--radius); font-size: 15px;
+  cursor: pointer; margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ HOME SCREEN ══════ -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <h1>汉语</h1>
+    <p>Learn Chinese</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card accent"><div class="num" id="stat-due">0</div><div class="label">Due today</div></div>
+    <div class="stat-card green"><div class="num" id="stat-known">0</div><div class="label">Known</div></div>
+    <div class="stat-card orange"><div class="num" id="stat-total">0</div><div class="label">Total</div></div>
+  </div>
+
+  <h3 style="margin-bottom:12px;">Choose HSK Level</h3>
+  <div class="hsk-grid" id="hsk-grid"></div>
+
+  <button class="start-btn" id="start-btn" onclick="startStudy()">Study Now</button>
+</div>
+
+<!-- ══════ STUDY SCREEN ══════ -->
+<div id="screen-study" class="screen">
+  <div class="study-top">
+    <button class="back-btn" onclick="showScreen('home')">← Back</button>
+    <div class="study-counter" id="study-counter">0/0</div>
+  </div>
+  <div class="study-progress"><div class="study-progress-fill" id="study-progress-fill"></div></div>
+
+  <div class="flashcard" id="flashcard" onclick="revealCard()">
+    <div class="hanzi" id="card-hanzi"></div>
+    <div class="hint" id="card-hint">Tap to reveal</div>
+    <div class="divider hidden" id="card-divider"></div>
+    <div class="pinyin hidden" id="card-pinyin"></div>
+    <div class="english hidden" id="card-english"></div>
+  </div>
+
+  <div class="rating-buttons hidden" id="rating-buttons">
+    <button class="rating-btn again" onclick="rateCard(0)">Again<span>&lt;1m</span></button>
+    <button class="rating-btn hard" onclick="rateCard(1)">Hard<span>&lt;6m</span></button>
+    <button class="rating-btn good" onclick="rateCard(2)">Good<span id="good-interval"></span></button>
+    <button class="rating-btn easy" onclick="rateCard(3)">Easy<span id="easy-interval"></span></button>
+  </div>
+
+  <div class="complete hidden" id="study-complete">
+    <div class="emoji">🎉</div>
+    <h2>Session Complete!</h2>
+    <p id="complete-stats"></p>
+    <button class="start-btn" onclick="showScreen('home')">Back to Home</button>
+  </div>
+</div>
+
+<!-- ══════ BROWSE SCREEN ══════ -->
+<div id="screen-browse" class="screen">
+  <h2 style="margin-bottom:16px;">Browse Words</h2>
+  <input class="search-box" id="search-box" placeholder="Search hanzi, pinyin, or english..." oninput="filterWords()">
+  <div class="filter-row" id="filter-row"></div>
+  <div class="word-list" id="word-list"></div>
+</div>
+
+<!-- ══════ PROFILE SCREEN ══════ -->
+<div id="screen-profile" class="screen">
+  <h2 style="margin-bottom:20px;">Profile</h2>
+
+  <div class="streak-display">
+    <div class="fire">🔥</div>
+    <div class="days" id="streak-days">0</div>
+    <div class="label">day streak</div>
+  </div>
+
+  <div class="profile-section">
+    <h3>Settings</h3>
+    <div class="setting-row">
+      <label>New cards / day</label>
+      <input type="number" id="setting-new" value="20" min="5" max="100" onchange="saveSetting('newPerDay', this.value)">
+    </div>
+    <div class="setting-row">
+      <label>Session size</label>
+      <input type="number" id="setting-session" value="20" min="5" max="50" onchange="saveSetting('sessionSize', this.value)">
+    </div>
+  </div>
+
+  <div class="profile-section">
+    <h3>Progress</h3>
+    <div id="progress-details"></div>
+  </div>
+
+  <button class="reset-btn" onclick="resetProgress()">Reset All Progress</button>
+</div>
+
+<!-- ══════ NAV ══════ -->
+<div class="nav">
+  <button class="active" onclick="showScreen('home')" id="nav-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Home
+  </button>
+  <button onclick="showScreen('browse')" id="nav-browse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    Browse
+  </button>
+  <button onclick="showScreen('profile')" id="nav-profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA & STATE
+// ══════════════════════════════════════════════
+let WORDS = [];
+let state = {
+  cards: {},       // cardId -> { ease, interval, due, reps, lapses }
+  selectedHSK: [1],
+  settings: { newPerDay: 20, sessionSize: 20 },
+  streak: { count: 0, lastDate: null },
+  studiedToday: { date: null, count: 0 }
+};
+
+const TODAY = () => new Date().toISOString().slice(0, 10);
+const DAY_MS = 86400000;
+
+function loadState() {
+  try { const s = localStorage.getItem('chinese-app'); if (s) state = JSON.parse(s); } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem('chinese-app', JSON.stringify(state));
+}
+
+// ══════════════════════════════════════════════
+// SPACED REPETITION (SM-2 simplified)
+// ══════════════════════════════════════════════
+function getCard(id) {
+  if (!state.cards[id]) {
+    state.cards[id] = { ease: 2.5, interval: 0, due: TODAY(), reps: 0, lapses: 0 };
+  }
+  return state.cards[id];
+}
+
+function scheduleCard(id, quality) {
+  // quality: 0=again, 1=hard, 2=good, 3=easy
+  const c = getCard(id);
+  if (quality === 0) {
+    c.interval = 0;
+    c.reps = 0;
+    c.lapses++;
+    c.ease = Math.max(1.3, c.ease - 0.2);
+  } else {
+    if (c.reps === 0) {
+      c.interval = quality === 1 ? 1 : quality === 2 ? 1 : 4;
+    } else if (c.reps === 1) {
+      c.interval = quality === 1 ? 1 : quality === 2 ? 3 : 6;
+    } else {
+      const mult = quality === 1 ? 1.2 : quality === 2 ? c.ease : c.ease * 1.3;
+      c.interval = Math.round(c.interval * mult);
+    }
+    c.ease = Math.max(1.3, c.ease + (quality === 1 ? -0.15 : quality === 2 ? 0 : 0.15));
+    c.reps++;
+  }
+  c.interval = Math.min(c.interval, 365);
+  const due = new Date();
+  due.setDate(due.getDate() + (quality === 0 ? 0 : c.interval));
+  c.due = due.toISOString().slice(0, 10);
+  saveState();
+  return c;
+}
+
+function isDue(id) {
+  const c = state.cards[id];
+  if (!c) return true; // new card
+  return c.due <= TODAY();
+}
+
+function isNew(id) { return !state.cards[id] || state.cards[id].reps === 0; }
+function isKnown(id) { return state.cards[id] && state.cards[id].reps > 0 && state.cards[id].interval >= 1; }
+
+function formatInterval(days) {
+  if (days === 0) return '<1m';
+  if (days === 1) return '1d';
+  if (days < 30) return days + 'd';
+  if (days < 365) return Math.round(days/30) + 'mo';
+  return Math.round(days/365) + 'y';
+}
+
+// ══════════════════════════════════════════════
+// STUDY SESSION
+// ══════════════════════════════════════════════
+let session = { queue: [], index: 0, revealed: false, correct: 0, total: 0 };
+
+function getStudyQueue() {
+  const selected = WORDS.filter(w => state.selectedHSK.includes(w.hsk));
+  const due = selected.filter(w => !isNew(w.hanzi) && isDue(w.hanzi));
+  const newCards = selected.filter(w => isNew(w.hanzi));
+
+  // Track new cards studied today
+  if (state.studiedToday.date !== TODAY()) {
+    state.studiedToday = { date: TODAY(), count: 0 };
+  }
+  const newLimit = Math.max(0, state.settings.newPerDay - state.studiedToday.count);
+  const sessionSize = state.settings.sessionSize;
+
+  // Mix: due cards first, then fill with new cards
+  const queue = [...due.slice(0, sessionSize)];
+  const remaining = sessionSize - queue.length;
+  queue.push(...newCards.slice(0, Math.min(remaining, newLimit)));
+
+  // Shuffle
+  for (let i = queue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [queue[i], queue[j]] = [queue[j], queue[i]];
+  }
+  return queue;
+}
+
+function startStudy() {
+  const queue = getStudyQueue();
+  if (queue.length === 0) {
+    alert('No cards to study! Select an HSK level or wait for reviews.');
+    return;
+  }
+  session = { queue, index: 0, revealed: false, correct: 0, total: queue.length };
+  showScreen('study');
+  showCard();
+}
+
+function showCard() {
+  if (session.index >= session.queue.length) {
+    finishSession();
+    return;
+  }
+  const word = session.queue[session.index];
+  session.revealed = false;
+
+  document.getElementById('card-hanzi').textContent = word.hanzi;
+  document.getElementById('card-pinyin').textContent = word.pinyin;
+  document.getElementById('card-english').textContent = word.english;
+  document.getElementById('card-hint').classList.remove('hidden');
+  document.getElementById('card-divider').classList.add('hidden');
+  document.getElementById('card-pinyin').classList.add('hidden');
+  document.getElementById('card-english').classList.add('hidden');
+  document.getElementById('rating-buttons').classList.add('hidden');
+
+  const pct = (session.index / session.total * 100).toFixed(0);
+  document.getElementById('study-progress-fill').style.width = pct + '%';
+  document.getElementById('study-counter').textContent = `${session.index + 1}/${session.total}`;
+
+  // Update interval hints
+  const c = getCard(word.hanzi);
+  const goodDays = c.reps === 0 ? 1 : c.reps === 1 ? 3 : Math.round(c.interval * c.ease);
+  const easyDays = c.reps === 0 ? 4 : c.reps === 1 ? 6 : Math.round(c.interval * c.ease * 1.3);
+  document.getElementById('good-interval').textContent = formatInterval(goodDays);
+  document.getElementById('easy-interval').textContent = formatInterval(easyDays);
+}
+
+function revealCard() {
+  if (session.revealed) return;
+  session.revealed = true;
+  document.getElementById('card-hint').classList.add('hidden');
+  document.getElementById('card-divider').classList.remove('hidden');
+  document.getElementById('card-pinyin').classList.remove('hidden');
+  document.getElementById('card-english').classList.remove('hidden');
+  document.getElementById('rating-buttons').classList.remove('hidden');
+}
+
+function rateCard(quality) {
+  const word = session.queue[session.index];
+  const wasNew = isNew(word.hanzi);
+  scheduleCard(word.hanzi, quality);
+  if (wasNew) state.studiedToday.count++;
+  if (quality >= 2) session.correct++;
+
+  if (quality === 0) {
+    // Put it back in the queue
+    const reinsert = Math.min(session.index + 3 + Math.floor(Math.random() * 3), session.queue.length);
+    session.queue.splice(reinsert, 0, word);
+    session.total = session.queue.length;
+  }
+
+  session.index++;
+  showCard();
+}
+
+function finishSession() {
+  // Update streak
+  const today = TODAY();
+  if (state.streak.lastDate === today) {
+    // already counted
+  } else {
+    const yesterday = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10);
+    state.streak.count = (state.streak.lastDate === yesterday) ? state.streak.count + 1 : 1;
+    state.streak.lastDate = today;
+  }
+  saveState();
+
+  document.getElementById('flashcard').classList.add('hidden');
+  document.getElementById('rating-buttons').classList.add('hidden');
+  document.getElementById('study-complete').classList.remove('hidden');
+  document.getElementById('study-progress-fill').style.width = '100%';
+  document.getElementById('complete-stats').textContent =
+    `${session.correct}/${session.total} correct · Keep it up!`;
+}
+
+// ══════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  const navBtn = document.getElementById('nav-' + name);
+  if (navBtn) navBtn.classList.add('active');
+
+  // Reset study screen
+  if (name === 'study') {
+    document.getElementById('flashcard').classList.remove('hidden');
+    document.getElementById('study-complete').classList.add('hidden');
+  }
+  if (name === 'home') updateHome();
+  if (name === 'browse') renderBrowse();
+  if (name === 'profile') renderProfile();
+}
+
+function updateHome() {
+  const selected = WORDS.filter(w => state.selectedHSK.includes(w.hsk));
+  const due = selected.filter(w => isDue(w.hanzi)).length;
+  const known = selected.filter(w => isKnown(w.hanzi)).length;
+
+  document.getElementById('stat-due').textContent = due;
+  document.getElementById('stat-known').textContent = known;
+  document.getElementById('stat-total').textContent = selected.length;
+
+  // HSK grid
+  const grid = document.getElementById('hsk-grid');
+  grid.innerHTML = '';
+  for (let level = 1; level <= 6; level++) {
+    const words = WORDS.filter(w => w.hsk === level);
+    const knownCount = words.filter(w => isKnown(w.hanzi)).length;
+    const pct = words.length ? (knownCount / words.length * 100).toFixed(0) : 0;
+    const isSelected = state.selectedHSK.includes(level);
+
+    const btn = document.createElement('div');
+    btn.className = 'hsk-btn' + (isSelected ? ' selected' : '');
+    btn.innerHTML = `
+      <h3>HSK ${level}</h3>
+      <p>${words.length} words · ${knownCount} known</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    `;
+    btn.onclick = () => {
+      const idx = state.selectedHSK.indexOf(level);
+      if (idx >= 0) state.selectedHSK.splice(idx, 1);
+      else state.selectedHSK.push(level);
+      state.selectedHSK.sort();
+      saveState();
+      updateHome();
+    };
+    grid.appendChild(btn);
+  }
+
+  const queue = getStudyQueue();
+  document.getElementById('start-btn').textContent =
+    queue.length > 0 ? `Study ${queue.length} Cards` : 'No Cards Due';
+  document.getElementById('start-btn').disabled = queue.length === 0;
+}
+
+// ══════════════════════════════════════════════
+// BROWSE
+// ══════════════════════════════════════════════
+let browseFilter = 0;
+
+function renderBrowse() {
+  const filterRow = document.getElementById('filter-row');
+  filterRow.innerHTML = '';
+  ['All', 'HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'].forEach((label, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (browseFilter === i ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => { browseFilter = i; renderBrowse(); };
+    filterRow.appendChild(btn);
+  });
+  filterWords();
+}
+
+function filterWords() {
+  const query = document.getElementById('search-box').value.toLowerCase();
+  let filtered = browseFilter === 0 ? WORDS : WORDS.filter(w => w.hsk === browseFilter);
+  if (query) {
+    filtered = filtered.filter(w =>
+      w.hanzi.includes(query) || w.pinyin.toLowerCase().includes(query) ||
+      w.english.toLowerCase().includes(query)
+    );
+  }
+
+  const list = document.getElementById('word-list');
+  list.innerHTML = '';
+  filtered.slice(0, 100).forEach(w => {
+    const item = document.createElement('div');
+    item.className = 'word-item';
+    const card = state.cards[w.hanzi];
+    const status = !card ? 'New' : card.interval >= 21 ? 'Mature' : card.interval >= 1 ? 'Learning' : 'New';
+    item.innerHTML = `
+      <div class="hz">${w.hanzi}</div>
+      <div class="info"><div class="py">${w.pinyin}</div><div class="en">${w.english}</div></div>
+      <div class="badge">${status}</div>
+    `;
+    list.appendChild(item);
+  });
+  if (filtered.length > 100) {
+    const more = document.createElement('div');
+    more.style.cssText = 'text-align:center;color:var(--text-dim);padding:16px;font-size:13px;';
+    more.textContent = `Showing 100 of ${filtered.length} results`;
+    list.appendChild(more);
+  }
+}
+
+// ══════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════
+function renderProfile() {
+  document.getElementById('streak-days').textContent = state.streak.count;
+  document.getElementById('setting-new').value = state.settings.newPerDay;
+  document.getElementById('setting-session').value = state.settings.sessionSize;
+
+  const details = document.getElementById('progress-details');
+  let html = '';
+  for (let level = 1; level <= 6; level++) {
+    const words = WORDS.filter(w => w.hsk === level);
+    const known = words.filter(w => isKnown(w.hanzi)).length;
+    const pct = words.length ? (known / words.length * 100).toFixed(1) : 0;
+    html += `<div class="setting-row"><label>HSK ${level}</label><span>${known}/${words.length} (${pct}%)</span></div>`;
+  }
+  details.innerHTML = html;
+}
+
+function saveSetting(key, value) {
+  state.settings[key] = parseInt(value) || 20;
+  saveState();
+}
+
+function resetProgress() {
+  if (confirm('Reset ALL progress? This cannot be undone.')) {
+    state.cards = {};
+    state.streak = { count: 0, lastDate: null };
+    state.studiedToday = { date: null, count: 0 };
+    saveState();
+    showScreen('home');
+  }
+}
+
+// ══════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (document.getElementById('screen-study').classList.contains('active')) {
+    if (e.code === 'Space' && !session.revealed) { e.preventDefault(); revealCard(); }
+    else if (session.revealed) {
+      if (e.key === '1') rateCard(0);
+      else if (e.key === '2') rateCard(1);
+      else if (e.key === '3') rateCard(2);
+      else if (e.key === '4') rateCard(3);
+    }
+  }
+});
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+async function init() {
+  loadState();
+  const resp = await fetch('data/hsk.json');
+  WORDS = await resp.json();
+  updateHome();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
