@@ -2,7 +2,7 @@
   "name": "汉语 — Learn Chinese",
   "short_name": "汉语",
   "description": "Learn Chinese with spaced repetition flashcards",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0f0f1a",
   "theme_color": "#0f0f1a",

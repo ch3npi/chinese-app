@@ -1,8 +1,14 @@
-const CACHE = 'chinese-v1';
-const ASSETS = ['/', '/index.html', '/data/hsk.json', '/manifest.json'];
+const CACHE = 'chinese-v2';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([
+      './',
+      './index.html',
+      './data/hsk.json',
+      './manifest.json'
+    ]))
+  );
   self.skipWaiting();
 });
 
